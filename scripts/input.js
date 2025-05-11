@@ -1,57 +1,60 @@
 // scripts/input.js
 
-// Объект для отслеживания состояния ввода (нажаты ли кнопки)
+// Объект для отслеживания текущего состояния ввода
+// Флаги устанавливаются в true, когда соответствующая кнопка/клавиша нажата
 let inputState = {
-    left: false,
-    right: false,
-    jump: false,
-    // Добавьте другие кнопки, если они есть (например, fire)
-    action: false // Пример для кнопки действия (огонь?)
+    left: false,      // Нажата кнопка/клавиша "Влево"
+    right: false,     // Нажата кнопка/клавиша "Вправо"
+    jump: false,      // Нажата кнопка/клавиша "Прыжок"
+    action: false     // Нажата кнопка/клавиша "Действие" (например, Fireball)
 };
 
-// Флаг для предотвращения многократных прыжков при удержании кнопки
-let jumpPressed = false;
-let actionPressed = false; // Флаг для кнопки действия
+// Вспомогательные флаги для обработки нажатия (срабатывает один раз при нажатии)
+let jumpButtonDown = false;
+let actionButtonDown = false;
 
 /**
  * Настраивает обработчики событий ввода для клавиатуры и touch-управления.
- * @param {Player} player - Ссылка на объект игрока, чтобы вызывать его методы (например, jump).
+ * @param {Player} player - Ссылка на объект игрока. Необходима для вызова методов игрока (прыжок, огонь)
+ *                          при активации соответствующего ввода.
  */
 export function setupInput(player) {
-    // Обработка ввода с клавиатуры (для десктопного тестирования)
+    // --- Обработка ввода с клавиатуры (для десктопов) ---
     document.addEventListener('keydown', (e) => {
-        // Убеждаемся, что игрок существует, прежде чем обрабатывать ввод
-        if (!player) return;
+        // Если объект игрока не создан или игра не активна, игнорируем ввод
+        if (!player /* || !game.is_active */) return;
 
         switch (e.key) {
             case 'ArrowLeft':
-            case 'a': // Добавляем WASD управление
+            case 'a': // Добавляем WASD как альтернативу стрелкам
                 inputState.left = true;
                 break;
             case 'ArrowRight':
             case 'd':
                 inputState.right = true;
                 break;
-            case ' ': // Пробел
+            case ' ': // Клавиша Пробел
             case 'ArrowUp':
             case 'w':
-                // Триггерим прыжок только при первом нажатии кнопки
-                if (!jumpPressed) {
-                     player.jump(); // Вызываем метод прыжка у объекта игрока
-                     jumpPressed = true; // Устанавливаем флаг, что кнопка прыжка нажата
+                // Вызываем метод прыжка только при первом нажатии кнопки
+                if (!jumpButtonDown) {
+                     player.jump(); // Предполагается, что у класса Player есть метод jump()
+                     jumpButtonDown = true; // Устанавливаем флаг, чтобы игнорировать последующие нажатия до отпускания
                 }
                 break;
-            case 'x': // Пример кнопки действия (например, огонь)
-                if (!actionPressed) {
-                     // player.fire(); // Вызываем метод действия у игрока (если он существует)
-                     actionPressed = true;
+            case 'x': // Пример: клавиша 'x' для действия (например, Fireball)
+            case 'f':
+                // Вызываем метод действия только при первом нажатии кнопки
+                if (!actionButtonDown) {
+                     // player.fire(); // Предполагается, что у класса Player есть метод fire()
+                     actionButtonDown = true; // Устанавливаем флаг
                 }
                 break;
         }
     });
 
     document.addEventListener('keyup', (e) => {
-         if (!player) return;
+         if (!player /* || !game.is_active */) return;
 
          switch (e.key) {
             case 'ArrowLeft':
@@ -65,60 +68,116 @@ export function setupInput(player) {
             case ' ':
             case 'ArrowUp':
             case 'w':
-                jumpPressed = false; // Сбрасываем флаг при отпускании кнопки прыжка
+                jumpButtonDown = false; // Сбрасываем флаг при отпускании кнопки прыжка
                 break;
-            case 'x':
-                actionPressed = false; // Сбрасываем флаг кнопки действия
-                break;
+             case 'x':
+             case 'f':
+                 actionButtonDown = false; // Сбрасываем флаг кнопки действия
+                 break;
          }
     });
 
-    // Обработка touch-ввода для мобильных устройств
+    // --- Обработка touch-ввода (для смартфонов и планшетов) ---
     const touchLeft = document.getElementById('touch-left');
     const touchRight = document.getElementById('touch-right');
     const touchJump = document.getElementById('touch-jump');
-    const touchControls = document.getElementById('touch-controls'); // Контейнер кнопок
+    // const touchAction = document.getElementById('touch-action'); // Если есть кнопка действия
 
-    // Проверяем, поддерживает ли устройство touch-ввод
-    // (Более надежные проверки, чем просто 'ontouchstart' in window)
+    const touchControls = document.getElementById('touch-controls'); // Контейнер для кнопок управления
+
+    // Проверяем, является ли устройство touch-совместимым
+    // ('ontouchstart' in window - старый, но быстрый способ)
+    // (navigator.maxTouchPoints > 0 - более современный способ)
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0) {
-         touchControls.style.display = 'flex'; // Показываем touch-управление (если оно было скрыто в CSS)
+         touchControls.style.display = 'flex'; // Показываем touch-управление, если оно было скрыто в CSS
+         // Если вы полностью скрыли блок в CSS через display: none, то display = 'flex'
+         // Если вы использовали visibility: hidden, то visibility = 'visible'
 
-         // Обработчики событий для touch-кнопок
-         // touchstart: палец коснулся кнопки
-         // touchend: палец оторвался от кнопки
-         // touchcancel: касание было прервано (например, свайпом)
+         // Добавляем обработчики событий для каждой touch-кнопки
+         // touchstart: палец коснулся экрана
+         // touchend: палец оторвался от экрана
+         // touchcancel: касание было прервано (например, слишком далеко ушло)
 
-         touchLeft.addEventListener('touchstart', (e) => { e.preventDefault(); if (player) inputState.left = true; });
-         touchLeft.addEventListener('touchend', (e) => { e.preventDefault(); if (player) inputState.left = false; });
-         touchLeft.addEventListener('touchcancel', (e) => { e.preventDefault(); if (player) inputState.left = false; });
+         touchLeft.addEventListener('touchstart', (e) => {
+             e.preventDefault(); // Предотвращаем стандартное поведение браузера (прокрутка, масштабирование)
+             if (player /* && game.is_active */) inputState.left = true;
+         });
+         touchLeft.addEventListener('touchend', (e) => {
+             e.preventDefault();
+             if (player /* && game.is_active */) inputState.left = false;
+         });
+         touchLeft.addEventListener('touchcancel', (e) => { // Важно также обрабатывать отмену касания
+             e.preventDefault();
+             if (player /* && game.is_active */) inputState.left = false;
+         });
 
-         touchRight.addEventListener('touchstart', (e) => { e.preventDefault(); if (player) inputState.right = true; });
-         touchRight.addEventListener('touchend', (e) => { e.preventDefault(); if (player) inputState.right = false; });
-         touchRight.addEventListener('touchcancel', (e) => { e.preventDefault(); if (player) inputState.right = false; });
 
-         touchJump.addEventListener('touchstart', (e) => { e.preventDefault(); if (player && !jumpPressed) { player.jump(); jumpPressed = true; } });
-         touchJump.addEventListener('touchend', (e) => { e.preventDefault(); jumpPressed = false; });
-         touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); jumpPressed = false; });
+         touchRight.addEventListener('touchstart', (e) => {
+             e.preventDefault();
+             if (player /* && game.is_active */) inputState.right = true;
+         });
+         touchRight.addEventListener('touchend', (e) => {
+             e.preventDefault();
+             if (player /* && game.is_active */) inputState.right = false;
+         });
+         touchRight.addEventListener('touchcancel', (e) => {
+             e.preventDefault();
+             if (player /* && game.is_active */) inputState.right = false;
+         });
 
-         // Добавьте обработчики для кнопки действия, если есть
-         // const touchAction = document.getElementById('touch-action');
+         touchJump.addEventListener('touchstart', (e) => {
+             e.preventDefault();
+             // Вызываем прыжок только при первом касании (срабатывает один раз)
+             if (player /* && game.is_active */ && !jumpButtonDown) {
+                 player.jump();
+                 jumpButtonDown = true; // Устанавливаем флаг, чтобы игнорировать удержание
+             }
+         });
+         touchJump.addEventListener('touchend', (e) => {
+             e.preventDefault();
+             jumpButtonDown = false; // Сбрасываем флаг при отпускании кнопки
+         });
+         touchJump.addEventListener('touchcancel', (e) => {
+              e.preventDefault();
+              jumpButtonDown = false;
+         });
+
+         // Обработка кнопки действия (если есть)
          // if (touchAction) {
-         //      touchAction.addEventListener('touchstart', (e) => { e.preventDefault(); if (player && !actionPressed) { player.fire(); actionPressed = true; } });
-         //      touchAction.addEventListener('touchend', (e) => { e.preventDefault(); actionPressed = false; });
-         //      touchAction.addEventListener('touchcancel', (e) => { e.preventDefault(); actionPressed = false; });
+         //     touchAction.addEventListener('touchstart', (e) => {
+         //         e.preventDefault();
+         //         if (player && !actionButtonDown) {
+         //              // player.fire();
+         //              actionButtonDown = true;
+         //         }
+         //     });
+         //     touchAction.addEventListener('touchend', (e) => {
+         //          e.preventDefault();
+         //          actionButtonDown = false;
+         //     });
+         //      touchAction.addEventListener('touchcancel', (e) => {
+         //           e.preventDefault();
+         //           actionButtonDown = false;
+         //      });
          // }
 
+         // Важно: Если вы используете несколько touch-кнопок, может понадобиться
+         // более сложная логика обработки touchmove и отслеживания individual touches (e.touches)
+         // для корректной симуляции одновременного нажатия нескольких кнопок.
+         // Текущая простая реализация хорошо работает для одиночных касаний или простых комбинаций.
 
     } else {
         // Если touch-устройство не обнаружено, скрываем touch-управление
         touchControls.style.display = 'none';
+        // if (touchAction) touchAction.style.display = 'none';
     }
 }
 
 /**
  * Возвращает текущее состояние ввода.
- * @returns {object} Объект с булевыми флагами для каждой кнопки.
+ * Этот объект inputState используется в функции update() game.js
+ * для определения действий игрока.
+ * @returns {object} Объект с булевыми флагами для каждой кнопки/действия.
  */
 export function getInputState() {
     return inputState;
