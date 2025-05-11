@@ -1,85 +1,91 @@
+/* style.css */
+
 body {
-    margin: 0;
-    overflow: hidden; /* Prevent scrolling */
-    background-color: #87ceeb; /* Sky blue background like Mario */
-    display: flex;
-    justify-content: center; /* Center the game */
-    align-items: center;
-    min-height: 100vh; /* Use full viewport height */
-    font-family: sans-serif;
+    margin: 0; /* Убираем стандартные отступы */
+    overflow: hidden; /* Скрываем полосы прокрутки */
+    background-color: #87ceeb; /* Фон - небесно-голубой, как в SMB */
+    display: flex; /* Используем flexbox для центрирования */
+    justify-content: center; /* Центрируем по горизонтали */
+    align-items: center; /* Центрируем по вертикали */
+    min-height: 100vh; /* Используем всю высоту видимой части экрана */
+    font-family: sans-serif; /* Простой шрифт для UI */
 }
 
 #game-container {
-    position: relative; /* Needed for absolute positioning of children */
-    /* Size will be set by JavaScript based on game resolution */
-    /* Example fixed size for testing: */
+    position: relative; /* Позволяет абсолютно позиционировать дочерние элементы (UI, touch controls) внутри */
+    /* Размер будет установлен JavaScript'ом для точного соответствия разрешению игры */
+    /* Пример фиксированного размера для тестирования, можно удалить */
     /* width: 256px; */
     /* height: 240px; */
-    /* border: 1px solid black; */
+    /* border: 1px solid black; */ /* Граница для наглядности */
 }
 
 #gameCanvas {
-    display: block; /* Remove extra space below canvas */
-    /* Size will be set by JavaScript */
+    display: block; /* Убирает небольшой нижний отступ, который может быть у canvas */
+    /* Размер будет установлен JavaScript'ом */
+    image-rendering: pixelated; /* Помогает сохранить пиксельную четкость при масштабировании */
+    image-rendering: crisp-edges; /* Альтернатива для pixelated */
 }
 
+/* Стили для UI элементов */
 #ui-score,
 #ui-lives {
-    position: absolute;
-    top: 10px; /* Adjust position */
-    color: white;
-    font-size: 16px;
-    text-shadow: 1px 1px 0 black;
-    z-index: 10; /* Make sure UI is above game */
+    position: absolute; /* Абсолютное позиционирование относительно #game-container */
+    top: 10px; /* Отступ сверху */
+    color: white; /* Белый текст */
+    font-size: 16px; /* Размер шрифта */
+    text-shadow: 1px 1px 0 black; /* Тень для читаемости на любом фоне */
+    z-index: 10; /* Убедимся, что UI находится поверх canvas */
 }
 
 #ui-score {
-    left: 10px;
+    left: 10px; /* Позиция слева */
 }
 
 #ui-lives {
-    right: 10px;
+    right: 10px; /* Позиция справа */
 }
 
-/* --- Touch Controls Styling --- */
+/* --- Стили для touch-управления --- */
 #touch-controls {
-    position: absolute;
-    bottom: 10px;
+    position: absolute; /* Абсолютное позиционирование */
+    bottom: 10px; /* Отступ снизу */
     left: 0;
     right: 0;
-    display: flex;
-    justify-content: space-between; /* Distribute buttons */
-    padding: 0 20px;
-    z-index: 20; /* Make sure controls are on top */
-    /* Initially hide on larger screens or if not needed */
-    /* visibility: hidden; */ /* Will be handled by JS */
+    display: flex; /* Используем flexbox для расположения кнопок */
+    justify-content: space-between; /* Распределяем кнопки по ширине */
+    padding: 0 20px; /* Внутренние отступы по бокам */
+    z-index: 20; /* Убедимся, что controls находится поверх всего */
+    /* По умолчанию скрываем или показываем через JS */
+     /* display: none; */ /* Изначально скрыт, будет показан JS при обнаружении touch */
 }
 
 .touch-button {
-    font-size: 20px;
-    padding: 10px 20px;
-    margin: 0 5px;
-    opacity: 0.7; /* Make them slightly transparent */
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-    color: white;
-    border: 2px solid white;
-    border-radius: 5px;
-    cursor: pointer;
-    flex-grow: 1; /* Buttons take equal width */
-    text-align: center;
-    user-select: none; /* Prevent text selection */
-    -webkit-user-select: none; /* For iOS */
-    -ms-user-select: none; /* For Edge/IE */
-    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    font-size: 20px; /* Размер текста на кнопках */
+    padding: 10px 20px; /* Внутренние отступы кнопки */
+    margin: 0 5px; /* Внешние отступы между кнопками */
+    opacity: 0.8; /* Немного прозрачные для ненавязчивости */
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный фон */
+    color: white; /* Белый текст */
+    border: 2px solid white; /* Белая граница */
+    border-radius: 5px; /* Скругленные углы */
+    cursor: pointer; /* Курсор в виде указателя */
+    flex-grow: 1; /* Кнопки занимают равное пространство в контейнере flexbox */
+    text-align: center; /* Текст по центру */
+    user-select: none; /* Запрет выделения текста при касании/клике */
+    -webkit-user-select: none; /* Для iOS */
+    -ms-user-select: none; /* Для Edge/IE */
+    -webkit-tap-highlight-color: transparent; /* Убирает стандартное выделение при касании на iOS */
 }
 
 .touch-button:active {
-    opacity: 1.0;
+    opacity: 1.0; /* Полная непрозрачность при нажатии */
 }
 
-/* Hide touch controls on non-touch devices or larger screens */
-@media (min-width: 768px) { /* Example breakpoint */
+/* Медиа-запрос: скрываем touch-управление на экранах шире 768px */
+/* Это пример, вы можете настроить breakpoint по своему усмотрению */
+@media (min-width: 768px) {
     #touch-controls {
-        display: none;
+        display: none !important; /* !important может понадобиться, если JS уже установил display: flex */
     }
 }
