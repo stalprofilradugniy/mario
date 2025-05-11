@@ -5,18 +5,12 @@ import { TILE_SIZE, GAME_HEIGHT } from './constants.js';
 // Импортируем классы объектов, которые могут появиться на уровне
 import { Block } from './block.js';
 import { Goomba } from './enemy.js';
-// (Предполагается, что классы Player, Enemy, Block также экспортируются из своих файлов)
+// import { Mushroom } from './items.js'; // Если есть отдельный файл для предметов
 
 
 // Пример данных уровня (2D массив плиток/объектов)
-// Каждый элемент в массиве представляет собой тип плитки или объекта:
-// 0: Пустота / Воздух
-// 1: Земля / Твердый блок
-// 2: Кирпичный блок (может ломаться или иметь содержимое)
-// 3: Блок со знаком вопроса (имеет содержимое: монета, гриб и т.д.)
-// 4: Goomba (враг)
-// (Добавьте другие коды для труб, лестниц, флага и т.д.)
-const level1_1_data = [
+// КАЖДЫЙ ЭКСПОРТИРУЕМ ЭТИ ДАННЫЕ
+export const level1_1_data = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -45,11 +39,12 @@ const level1_1_data = [
  * @param {Array<Array<number>>} levelData - 2D массив, представляющий данные уровня.
  * @returns {object} Объект, содержащий массивы созданных блоков и врагов, и начальную позицию игрока.
  */
-export function loadLevel(levelData) {
+export function loadLevel(levelData) { // КАЖДЫЙ ЭКСПОРТИРУЕМ ЭТУ ФУНКЦИЮ
     const levelObjects = {
         blocks: [],         // Массив объектов Block
         enemies: [],        // Массив объектов Enemy
         playerStart: null   // Начальная позиция игрока {x, y}
+        // items: []         // Массив предметов (если они создаются при загрузке уровня)
     };
 
     // Перебираем строки (y-координата)
@@ -64,43 +59,37 @@ export function loadLevel(levelData) {
             // Создаем объекты в зависимости от типа плитки
             switch (tileType) {
                 case 1: // Земля / Твердый блок
-                    levelObjects.blocks.push(new Block(x, y, 'solid')); // Создаем твердый блок
+                    levelObjects.blocks.push(new Block(x, y, 'solid'));
                     break;
                 case 2: // Кирпичный блок
                     levelObjects.blocks.push(new Block(x, y, 'brick'));
                     break;
-                case 3: // Блок со знаком вопроса
-                    levelObjects.blocks.push(new Block(x, y, 'question'));
-                    break;
+                case 3: // Блок со знаком вопроса (добавим логику содержимого позже)
+                     levelObjects.blocks.push(new Block(x, y, 'question', 'coin')); // Указываем содержимое
+                     break;
                 case 4: // Goomba
-                    // Создаем врага
                     levelObjects.enemies.push(new Goomba(x, y));
-                    // В SMB враги часто стоят на земле, убедимся, что под ними есть твердая плитка
-                    // Если в levelData[row+1][col] нет земли (1), это может быть обрыв.
-                    // Для простоты в этом примере просто создаем Goomba в указанной позиции.
                     break;
-                 // case 5: // Труба (верхняя часть) - пример
-                 //      levelObjects.blocks.push(new Block(x, y, 'pipe-top'));
-                 //      break;
-                 // case 6: // Труба (нижняя часть) - пример
-                 //      levelObjects.blocks.push(new Block(x, y, 'pipe-bottom'));
-                 //      break;
-                 // case 7: // Начальная позиция игрока - пример
+                 // case 7: // Начальная позиция игрока
                  //     levelObjects.playerStart = { x: x, y: y };
                  //     break;
-                // Игнорируем 0 (пустоту)
+                // Игнорируем 0 (пустоту) и другие неописанные типы
             }
         }
     }
 
     // Если начальная позиция игрока не была указана в данных уровня (например, кодом 7)
     // Устанавливаем позицию по умолчанию
-    if (levelObjects.playerStart === null) {
-         levelObjects.playerStart = { x: TILE_SIZE * 2, y: GAME_HEIGHT - TILE_SIZE * 3 }; // Старт над землей
-    }
+    // (Нужно импортировать константы DEFAULT_PLAYER_START_X, DEFAULT_PLAYER_START_Y, GAME_HEIGHT, TILE_SIZE)
+     if (levelObjects.playerStart === null) {
+          levelObjects.playerStart = { x: TILE_SIZE * 2, y: GAME_HEIGHT - TILE_SIZE * 3 }; // Старт над землей
+     }
+
 
     // Возвращаем все созданные объекты уровня
     return levelObjects;
 }
 
 // (Можно добавить другие уровни или функции для переключения между ними)
+// export const level1_2_data = [...]; // Экспортируем другие уровни, если они есть
+// export function loadLevel2(...) { ... }
