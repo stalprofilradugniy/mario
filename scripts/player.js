@@ -1,53 +1,82 @@
 // scripts/player.js
 
 // Импортируем необходимые константы
-import { TILE_SIZE, GRAVITY, JUMP_FORCE, PLAYER_SPEED, GAME_WIDTH, GAME_HEIGHT } from './constants.js';
+import { TILE_SIZE, GRAVITY, JUMP_FORCE, PLAYER_SPEED, GAME_WIDTH, GAME_HEIGHT, MAX_FALL_SPEED } from './constants.js';
+// Импортируем классы других объектов для проверки коллизий
+import { Block } from './block.js';
+import { Goomba } from './enemy.js';
+// import { Mushroom } from './items.js'; // Если есть предметы
 
+/**
+ * Класс, представляющий игрового персонажа (Марио).
+ */
 export class Player {
     /**
      * @param {number} x - Начальная X-координата игрока.
      * @param {number} y - Начальная Y-координата игрока.
      */
     constructor(x, y) {
-        this.x = x; // Позиция по X
-        this.y = y; // Позиция по Y
-        this.width = TILE_SIZE; // Ширина спрайта игрока (можно изменить для анимации)
-        this.height = TILE_SIZE * 2; // Высота спрайта игрока (Марио обычно 2 плитки в высоту)
+        this.x = x; // Позиция X
+        this.y = y; // Позиция Y
+        this.width = TILE_SIZE; // Ширина игрока
+        this.height = TILE_SIZE * 2; // Высота игрока (изначально "Большой Марио" для упрощения коллизий с Goomba)
+                                      // В реальной игре начальная высота = TILE_SIZE, и она увеличивается
+                                      // при подборе гриба.
 
-        this.vx = 0; // Скорость по X
-        this.vy = 0; // Скорость по Y
+        this.vx = 0; // Горизонтальная скорость
+        this.vy = 0; // Вертикальная скорость
 
-        this.isJumping = false; // Флаг: игрок в прыжке
-        this.isGrounded = false; // Флаг: игрок стоит на земле/платформе
+        this.isJumping = false; // Находится ли игрок в прыжке
+        this.isGrounded = false; // Находится ли игрок на твердой поверхности
 
-        // Состояния для движения на основе ввода (устанавливаются в input.js)
+        // Состояния, получаемые из input.js
         this.isMovingLeft = false;
         this.isMovingRight = false;
+        // this.isFiring = false; // Для огненного шара
 
-        // Состояние Марио (маленький, большой, огненный)
-        this.isBigMario = false; // Пока всегда маленький
-        // Добавьте другие состояния и таймеры для смены состояний (например, неуязвимость после удара)
+        // Игровые состояния Марио
+        this.isBigMario = true; // Начнем сразу с "Большого Марио" для демонстрации
+                               // В реальной игре: false по умолчанию
+        // this.hasFireFlower = false; // Есть ли огненный цветок
+        // this.isInvincible = false; // Временная неуязвимость после урона
+        // this.invincibilityTimer = 0; // Таймер неуязвимости
+        // this.fireTimer = 0; // Таймер между выстрелами огненными шарами
+
+        this.isAlive = true; // Жив ли игрок
     }
 
     /**
-     * Обновляет состояние игрока в каждом кадре игры.
+     * Обновляет состояние игрока (позиция, скорость, коллизии).
      * @param {number} deltaTime - Время, прошедшее с предыдущего кадра (в миллисекундах).
-     * @param {object} inputState - Объект, содержащий текущее состояние ввода.
-     * @param {Block[]} blocks - Массив всех блоков на уровне (для коллизий).
-     * @param {Enemy[]} enemies - Массив всех врагов на уровне (для коллизий).
+     * @param {object} inputState - Текущее состояние ввода (получено из input.js).
+     * @param {Block[]} blocks - Массив всех блоков на уровне.
+     * @param {Enemy[]} enemies - Массив всех врагов на уровне.
+     * @param {Game} game - Ссылка на объект игры для взаимодействия (например, получение урона, создание предметов).
      */
-    update(deltaTime, inputState, blocks, enemies) {
-        // Обновляем состояние движения на основе inputState
+    update(deltaTime, inputState, blocks, enemies, game) {
+        // Если игрок не жив, не обновляем его логику
+        if (!this.isAlive) {
+             // Логика смерти игрока (анимация, таймер перед Game Over/возрождением)
+             // this.deathAnimationTimer -= deltaTime;
+             // if (this.deathAnimationTimer <= 0) {
+             //      game.handlePlayerDeathComplete(); // Уведомить игру о завершении анимации смерти
+             // }
+             return; // Прекращаем обновление, если игрок мертв
+        }
+
+        // --- Обновление состояния на основе ввода ---
         this.isMovingLeft = inputState.left;
         this.isMovingRight = inputState.right;
-        // inputState.jump и inputState.action обрабатываются напрямую в setupInput,
-        // вызывая методы jump() и fire() при первом нажатии
+        // inputState.jump и inputState.action обрабатываются в input.js и вызывают jump()/fire() при первом нажатии
 
+        // --- Применение физики ---
         // Применяем гравитацию к вертикальной скорости
         // (В реальной физике: this.vy += GRAVITY * (deltaTime / 1000);)
         this.vy += GRAVITY;
+        // Ограничиваем максимальную скорость падения
+        if (this.vy > MAX_FALL_SPEED) this.vy = MAX_FALL_SPEED;
 
-        // Вычисляем горизонтальную скорость на основе состояния движения
+        // Вычисляем горизонтальную скорость на основе движения
         this.vx = 0;
         if (this.isMovingLeft) {
             this.vx = -PLAYER_SPEED;
@@ -55,153 +84,123 @@ export class Player {
             this.vx = PLAYER_SPEED;
         }
 
-        // --- Логика коллизий ---
-        // Это УПРОЩЕННАЯ логика, которая только предотвращает прохождение сквозь блоки.
-        // Правильная реализация коллизий требует определения стороны столкновения
-        // и соответствующего изменения скорости и позиции.
+        // --- Обработка Коллизий ---
+        // Проверка и разрешение коллизий - это ключевая и самая сложная часть платформера.
+        // Здесь мы будем проверять коллизии с блоками и врагами.
 
-        // Шаг 1: Предварительное обновление позиции (без учета коллизий)
+        // Сбрасываем флаг isGrounded перед проверкой коллизий
+        this.isGrounded = false;
+        let hitCeiling = false; // Флаг удара головой
+
+        // --- Коллизии с блоками ---
+        // Сначала обновляем X, проверяем коллизии по X, затем обновляем Y, проверяем коллизии по Y.
+        // Это помогает правильно обрабатывать коллизии с углами.
+
+        // Проверяем коллизии по горизонтали
         const nextX = this.x + this.vx;
-        const nextY = this.y + this.vy;
-
-        // Флаг для проверки, находится ли игрок на земле после всех проверок коллизий
-        let landedOnBlock = false;
-
-        // Проверяем коллизии с блоками
         blocks.forEach(block => {
-            // Если блок не твердый (например, пустой блок), пропускаем проверку коллизии
-             if (!block.isSolid) return;
+            if (!block.isSolid) return; // Проверяем коллизию только с твердыми блоками
 
-            // Проверка наложения (простая AABB коллизия)
-            if (nextX < block.x + block.width &&
-                nextX + this.width > block.x &&
-                nextY < block.y + block.height &&
-                nextY + this.height > block.y) {
+             // Проверка наложения между *предстоящей* позицией игрока по X и текущей позицией блока
+             // и текущей позицией игрока по Y и текущей позицией блока
+             if (nextX < block.x + block.width &&
+                 nextX + this.width > block.x &&
+                 this.y < block.y + block.height && // Проверка по текущему Y игрока
+                 this.y + this.height > block.y) {
 
-                // Есть наложение. Определяем, с какой стороны произошло столкновение.
-                // Этот расчет очень приблизительный и требует доработки для точной симуляции.
-
-                const xOverlap = (this.x < block.x + block.width && this.x + this.width > block.x);
-                const yOverlap = (this.y < block.y + block.height && this.y + this.height > block.y);
-
-                if (xOverlap && yOverlap) {
-                    // Определяем сторону коллизии по предыдущей позиции
-                    const prevX = this.x;
-                    const prevY = this.y;
-
-                    const movedHorizontally = (nextX !== prevX);
-                    const movedVertically = (nextY !== prevY);
-
-                    if (movedHorizontally && !movedVertically) {
-                         // Коллизия произошла только по горизонтали
-                         if (this.vx > 0) this.x = block.x - this.width; // Уперся в блок справа
-                         if (this.vx < 0) this.x = block.x + block.width; // Уперся в блок слева
-                         this.vx = 0; // Останавливаем горизонтальное движение
-                    } else if (!movedHorizontally && movedVertically) {
-                         // Коллизия произошла только по вертикали
-                         if (this.vy > 0) { // Падает вниз (на блок)
-                             this.y = block.y - this.height;
-                             this.vy = 0; // Останавливаем падение
-                             this.isJumping = false; // Прыжок завершен
-                             landedOnBlock = true; // Помечаем, что приземлились на блок
-                         }
-                         if (this.vy < 0) { // Прыгает вверх (ударяется головой об блок)
-                             this.y = block.y + block.height;
-                             this.vy = 0; // Отскакиваем вниз
-                             // Если блок умеет реагировать на удар (например, question block)
-                             // block.hit(this); // Передаем игрока, чтобы блок знал, кто ударил
-                         }
-                    } else {
-                        // Коллизия по обеим осям или без движения - нужна более сложная логика
-                        // Для простоты, если есть наложение, просто отталкиваем
-                         const xDiff = (nextX + this.width/2) - (block.x + block.width/2);
-                         const yDiff = (nextY + this.height/2) - (block.y + block.height/2);
-
-                         if (Math.abs(xDiff) > Math.abs(yDiff)) { // Коллизия больше по горизонтали
-                             if (xDiff > 0) this.x = block.x + block.width;
-                             else this.x = block.x - this.width;
-                             this.vx = 0;
-                         } else { // Коллизия больше по вертикали
-                              if (yDiff > 0) { // Падает на блок
-                                 this.y = block.y - this.height;
-                                 this.vy = 0;
-                                 this.isJumping = false;
-                                 landedOnBlock = true;
-                             } else { // Ударяется снизу
-                                 this.y = block.y + block.height;
-                                 this.vy = 0;
-                                 // block.hit(this);
-                             }
-                         }
-                    }
-                }
+                 // Есть горизонтальная коллизия!
+                 if (this.vx > 0) { // Игрок движется вправо
+                     this.x = block.x - this.width; // Ставим игрока рядом с блоком слева от него
+                 } else if (this.vx < 0) { // Игрок движется влево
+                     this.x = block.x + block.width; // Ставим игрока рядом с блоком справа от него
+                 }
+                 this.vx = 0; // Останавливаем горизонтальное движение при столкновении
+                 collidedHorizontally = true; // Флаг горизонтальной коллизии (можно использовать позже)
             }
         });
 
-        // Обновляем флаг isGrounded после проверки всех коллизий с блоками
-        this.isGrounded = landedOnBlock;
+        // Обновляем X позицию (она уже скорректирована, если была коллизия)
+        this.x += this.vx;
 
 
-        // --- Коллизия с врагами ---
-        // Игрок vs Враг (добавьте эту логику здесь или в game.js update)
-        // enemies.forEach((enemy, index) => {
-        //     if (enemy.isAlive) {
-        //         // Проверка наложения игрока и врага
-        //         if (this.x < enemy.x + enemy.width &&
-        //             this.x + this.width > enemy.x &&
-        //             this.y < enemy.y + enemy.height &&
-        //             this.y + this.height > enemy.y) {
-        //
-        //             // Определяем, как игрок столкнулся с врагом
-        //             const playerBottom = this.y + this.height;
-        //             const enemyTop = enemy.y;
-        //
-        //             if (this.vy > 0 && playerBottom < enemyTop + this.vy * 2) { // Приземлился сверху (VY > 0 означает падение)
-        //                 // Раздавить врага
-        //                 enemy.squash(); // Вызываем метод раздавливания у врага
-        //                 this.vy = JUMP_FORCE / 2; // Отскок от врага
-        //                 score += 100; // Добавить очки
-        //             } else { // Столкнулся сбоку или снизу
-        //                 // Игрок получает урон (теряет размер или жизнь)
-        //                 // takeDamage(); // Метод обработки урона у игрока
-        //             }
-        //         }
-        //     }
-        // });
+        // Проверяем коллизии по вертикали (после обновления X)
+        const nextY = this.y + this.vy;
+         blocks.forEach(block => {
+            if (!block.isSolid) return; // Проверяем коллизию только с твердыми блоками
+
+            // Проверка наложения между текущей позицией игрока по X
+            // и *предстоящей* позицией игрока по Y и текущей позицией блока
+             if (this.x < block.x + block.width && // Проверка по текущему X игрока
+                 this.x + this.width > block.x &&
+                 nextY < block.y + block.height &&
+                 nextY + this.height > block.y) {
+
+                 // Есть вертикальная коллизия!
+                 if (this.vy > 0) { // Игрок падает вниз (приземляется на блок)
+                     this.y = block.y - this.height; // Ставим игрока ровно на верхнюю грань блока
+                     this.vy = 0; // Останавливаем вертикальное движение
+                     this.isJumping = false; // Игрок больше не в прыжке
+                     this.isGrounded = true; // Игрок теперь на земле
+                 } else if (this.vy < 0) { // Игрок движется вверх (ударяется головой об блок)
+                     this.y = block.y + block.height; // Ставим игрока ровно под нижнюю грань блока
+                     this.vy = 0; // Останавливаем вертикальное движение (отскакиваем вниз)
+                     hitCeiling = true; // Устанавливаем флаг удара головой
+
+                     // Если блок может быть ударен (например, блок вопроса или кирпич)
+                     block.hit(this, game); // Вызываем метод hit() блока
+                 }
+            }
+        });
+
+        // Обновляем Y позицию (она уже скорректирована, если была коллизия)
+        this.y += this.vy;
 
 
-        // Окончательное обновление позиции после разрешения коллизий (если логика коллизий корректировала x, y)
-        // Если логика коллизий только определяла новую позицию, этот шаг не нужен.
-        // Для простой модели выше, x и y уже обновлены внутри цикла коллизий.
+        // --- Коллизии с врагами ---
+        // Коллизия игрока с врагами обычно обрабатывается после обновления позиций
+        // всех объектов в функции update() game.js, так как это взаимодействие
+        // между разными классами объектов.
 
-
-        // Проверка границ экрана (чтобы игрок не вышел за пределы)
-        // Левая граница
+        // --- Проверки границ мира ---
+        // Не даем игроку уйти за левый край экрана
         if (this.x < 0) {
             this.x = 0;
-            this.vx = 0; // Останавливаем движение, если уперся в границу
+            this.vx = 0;
         }
-        // Правая граница (нужна логика камеры, если мир шире экрана)
-        // Пока просто ограничиваем правой границей canvas
+
+        // Не даем игроку уйти за правый край экрана (при отсутствии прокрутки камеры)
+        // В реальной игре с прокруткой мира, эта граница будет сдвигаться.
         if (this.x + this.width > GAME_WIDTH) {
             this.x = GAME_WIDTH - this.width;
             this.vx = 0;
         }
-        // Верхняя граница
-         if (this.y < 0) {
-             this.y = 0;
-             this.vy = 0;
-         }
-        // Нижняя граница (смерть или приземление)
-        if (this.y + this.height > GAME_HEIGHT) {
-            this.y = GAME_HEIGHT - this.height;
-            this.vy = 0;
-            this.isJumping = false; // Не в прыжке, если на дне
-            this.isGrounded = true; // На земле, если на дне
 
-            // Здесь должна быть логика смерти игрока, если он упал в пропасть
-            // Например: game.loseLife();
+        // Не даем игроку уйти за верхний край экрана
+        if (this.y < 0) {
+            this.y = 0;
+            this.vy = 0;
         }
+
+        // Обработка падения в пропасть (нижняя граница экрана)
+        if (this.y + this.height > GAME_HEIGHT) {
+             // Игрок упал ниже нижней границы игрового мира
+             // Это считается падением в пропасть и потерей жизни
+             // game.loseLife(); // Вызываем функцию потери жизни у объекта Game
+             console.log("Игрок упал в пропасть!"); // Логируем событие
+             // Для этого базового примера просто возвращаем игрока в начальную позицию
+             game.resetPlayerPosition(); // Вызываем метод сброса позиции у объекта Game
+        }
+
+        // --- Обновление состояний, зависящих от времени (неуязвимость, таймеры Fireball) ---
+        // if (this.isInvincible) {
+        //     this.invincibilityTimer -= deltaTime;
+        //     if (this.invincibilityTimer <= 0) {
+        //         this.isInvincible = false;
+        //     }
+        // }
+        // if (this.fireTimer > 0) {
+        //      this.fireTimer -= deltaTime;
+        // }
     }
 
     /**
@@ -209,50 +208,129 @@ export class Player {
      * @param {CanvasRenderingContext2D} ctx - Контекст отрисовки canvas.
      */
     draw(ctx) {
-        // Отрисовываем игрока как простой прямоугольник
-        ctx.fillStyle = 'red'; // Основной цвет
+        // Если игрок временно неуязвим, можно сделать его мигающим (не реализовано)
+        // if (this.isInvincible && Math.floor(this.invincibilityTimer / 100) % 2 === 0) {
+        //      return; // Не рисуем в этом кадре для эффекта мигания
+        // }
+
+        // Выбираем цвет в зависимости от состояния Марио (маленький/большой/огненный)
+        // const bodyColor = this.hasFireFlower ? 'orange' : (this.isBigMario ? 'red' : 'red'); // Маленький и Большой - красный
+        const bodyColor = 'red'; // Всегда красный в этом базовом примере
+
+        // Рисуем основную часть тела игрока как прямоугольник
+        ctx.fillStyle = bodyColor;
         ctx.fillRect(this.x, this.y, this.width, this.height);
 
-        // Отрисовываем "колпак" (для примитивной визуализации)
+        // Рисуем "колпак" (примитивная визуализация)
         ctx.fillStyle = 'white';
         ctx.fillRect(this.x, this.y, this.width, this.height / 4); // Белый прямоугольник сверху
-        // Можно добавить усы/глаза и т.д.
+
+        // Если Марио "Большой", можно добавить "рубашку" или другие детали
+        // if (this.isBigMario) {
+        //     ctx.fillStyle = 'blue'; // Цвет комбинезона
+        //     ctx.fillRect(this.x, this.y + this.height / 4, this.width, this.height / 4); // Пример "рубашки"
+        // }
+
+        // Добавьте отрисовку спрайтов и анимации здесь!
+        // Это просто заглушки.
     }
 
     /**
      * Выполняет действие прыжка для игрока.
+     * Может быть вызван из input.js при нажатии кнопки прыжка.
      */
     jump() {
-        // Игрок может прыгнуть только если он в данный момент находится на земле
+        // Игрок может прыгнуть только если он находится на земле
         if (this.isGrounded) {
-            this.vy = JUMP_FORCE; // Задаем вертикальную скорость для прыжка
-            this.isJumping = true; // Устанавливаем флаг прыжка
-            this.isGrounded = false; // Больше не на земле во время прыжка
-            // Добавьте сюда логику для воспроизведения звука прыжка
+            this.vy = JUMP_FORCE; // Задаем начальную вертикальную скорость прыжка
+            this.isJumping = true; // Устанавливаем флаг, что игрок в прыжке
+            this.isGrounded = false; // Игрок больше не на земле
+            // Добавьте логику воспроизведения звука прыжка
+             console.log("Прыжок!");
         }
     }
 
-    // Методы для обработки состояний Марио (увеличение, получение урона и т.д.)
-    // growUp() {
-    //      this.isBigMario = true;
-    //      this.height = TILE_SIZE * 2; // Увеличиваем высоту (с учетом новой коллизии)
-    //      // Добавьте анимацию увеличения
-    // }
-
-    // takeDamage() {
-    //     if (this.isBigMario) {
-    //         this.isBigMario = false;
-    //         this.height = TILE_SIZE; // Снова становимся маленьким
-    //         // Добавьте таймер неуязвимости и анимацию мерцания
-    //     } else {
-    //         // game.loseLife(); // Теряем жизнь
+    /**
+     * Выполняет действие "огонь" (например, бросок Fireball).
+     * Может быть вызван из input.js при нажатии кнопки действия.
+     */
+    // fire() {
+    //     // Игрок может "стрелять", только если у него есть Fire Flower и прошел кулдаун
+    //     if (this.hasFireFlower /* && this.fireTimer <= 0 */) {
+    //         console.log("Огонь!");
+    //         // Создать новый объект Fireball
+    //         // const fireball = new Fireball(this.x + this.width, this.y + this.height / 2, this.isMovingRight); // Создать Fireball
+    //         // game.addGameObject(fireball); // Добавить Fireball в список активных объектов игры
+    //         // this.fireTimer = 500; // Установить кулдаун (например, 500 мс)
     //     }
     // }
 
-    // fire() {
-    //     if (this.hasFireFlower) {
-    //         // Создать и запустить объект Fireball
-    //         // fireTimer = ... // Таймер между выстрелами
+    /**
+     * Игрок получает урон (столкновение с врагом сбоку, падение в яму и т.д.).
+     * @param {Game} game - Ссылка на объект игры для управления жизнями.
+     */
+    takeDamage(game) {
+        // if (this.isInvincible) return; // Игнорируем урон, если игрок неуязвим
+
+        // if (this.isBigMario) {
+        //     // Если Марио был большой, он становится маленьким
+        //     this.isBigMario = false;
+        //     this.height = TILE_SIZE; // Уменьшаем высоту (нужна логика коллизий для новой высоты)
+        //     this.hasFireFlower = false; // Теряет огненный цветок, если был
+        //     this.isInvincible = true; // Становится временно неуязвимым
+        //     this.invincibilityTimer = 2000; // Неуязвимость на 2 секунды (пример)
+        //     // Добавьте звук уменьшения и анимацию мигания
+        //      console.log("Марио стал маленьким!");
+        // } else {
+            // Если Марио был маленький, он теряет жизнь
+            game.loseLife(); // Вызываем функцию потери жизни в game.js
+             console.log("Марио потерял жизнь!");
+        // }
+    }
+
+    /**
+     * Игрок собирает предмет (например, гриб или цветок).
+     * @param {Item} item - Объект собранного предмета.
+     * @param {Game} game - Ссылка на объект игры.
+     */
+    // collectItem(item, game) {
+    //     console.log(`Игрок подобрал предмет: ${item.type}`);
+    //     switch (item.type) {
+    //         case 'mushroom':
+    //             if (!this.isBigMario) {
+    //                 this.growUp(); // Становимся большим
+    //             }
+    //             game.addScore(item.scoreValue);
+    //             break;
+    //         case 'flower':
+    //             this.growUp(); // Становимся большим (если был маленьким)
+    //             this.hasFireFlower = true; // Получаем Fire Flower
+    //             game.addScore(item.scoreValue);
+    //             break;
+    //         case 'star':
+    //              this.isInvincible = true; // Становимся неуязвимым
+    //              this.invincibilityTimer = 10000; // Долгая неуязвимость (пример)
+    //              // Добавьте эффект музыки и анимации
+    //              game.addScore(item.scoreValue);
+    //              break;
+    //         case 'coin': // Монеты тоже могут быть предметами
+    //             game.addScore(item.scoreValue);
+    //             // Добавьте звук монеты
+    //             break;
+    //     }
+    //     item.isCollected = true; // Помечаем предмет как собранный для удаления
+    // }
+
+    /**
+     * Метод для увеличения Марио (после подбора гриба или цветка).
+     */
+    // growUp() {
+    //     if (!this.isBigMario) {
+    //          this.isBigMario = true;
+    //          this.height = TILE_SIZE * 2; // Увеличиваем высоту
+    //          this.y -= TILE_SIZE; // Сдвигаем вверх, чтобы нижняя часть осталась на месте
+    //          // Добавьте анимацию увеличения
+    //          console.log("Марио вырос!");
     //     }
     // }
 }
