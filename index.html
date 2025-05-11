@@ -1,42 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru"> <!-- Указываем русский язык -->
 <head>
     <meta charset="UTF-8">
-    <!-- Обязательно для адаптации к смартфонам -->
+    <!-- Обязательный мета-тег для адаптации к различным устройствам, включая смартфоны -->
+    <!-- device-width устанавливает ширину области просмотра равной ширине устройства -->
+    <!-- initial-scale=1.0 устанавливает начальный масштаб -->
+    <!-- user-scalable=no предотвращает масштабирование страницы пользователем (типично для игр) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Basic Web Platformer</title>
-    <!-- Подключаем таблицу стилей -->
+    <title>Базовый Веб-Платформер</title>
+    <!-- Подключаем внешнюю таблицу стилей для оформления -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Контейнер для игры и UI -->
+    <!-- Основной контейнер, который будет содержать canvas и UI элементы -->
+    <!-- Используется для удобства позиционирования дочерних элементов -->
     <div id="game-container">
-        <!-- Canvas для отрисовки графики игры -->
+        <!-- Элемент canvas, где будет происходить вся отрисовка игрового мира -->
         <canvas id="gameCanvas"></canvas>
 
-        <!-- UI элементы (счет, жизни) -->
+        <!-- UI элементы, расположенные поверх игрового мира -->
+        <!-- Отображают игровую информацию (счет, жизни) -->
         <div id="ui-score">Score: 0</div>
         <div id="ui-lives">Lives: 3</div>
 
-        <!-- Блок для touch-управления на смартфонах -->
-        <!-- Изначально может быть скрыт и показан JavaScript'ом при обнаружении touch-устройства -->
+        <!-- Контейнер для кнопок сенсорного управления -->
+        <!-- Этот блок будет виден только на touch-устройствах (управляется CSS и JS) -->
+        <!-- Кнопки для движения влево, вправо и прыжка -->
         <div id="touch-controls">
             <button id="touch-left" class="touch-button">←</button>
             <button id="touch-right" class="touch-button">→</button>
-            <button id="touch-jump" class="touch-button">Jump</button>
+            <button id="touch-jump" class="touch-button">Прыжок</button> <!-- Изменим текст на русский -->
         </div>
+        <!-- Можно добавить кнопку для действия (например, огонь) -->
+        <!-- <div id="touch-action-container">
+            <button id="touch-action" class="touch-button">Огонь</button>
+        </div> -->
     </div>
 
     <!-- Подключаем JavaScript файлы -->
-    <!-- Порядок важен из-за зависимостей -->
-    <script src="scripts/constants.js"></script>
-    <script src="scripts/input.js"></script>
-    <script src="scripts/block.js"></script>
-    <script src="scripts/enemy.js"></script>
-    <script src="scripts/player.js"></script>
-    <script src="scripts/level.js"></script>
-    <!-- Главный скрипт игры -->
-    <script src="scripts/game.js"></script>
+    <!-- Важен порядок подключения из-за зависимостей модулей -->
+    <script type="module" src="scripts/constants.js"></script>
+    <script type="module" src="scripts/input.js"></script>
+    <script type="module" src="scripts/block.js"></script>
+    <script type="module" src="scripts/enemy.js"></script>
+    <script type="module" src="scripts/player.js"></script>
+    <script type="module" src="scripts/level.js"></script>
+    <!-- Главный скрипт игры, который инициализирует и запускает все -->
+    <script type="module" src="scripts/game.js"></script>
 </body>
 </html>
