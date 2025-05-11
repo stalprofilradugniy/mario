@@ -1,41 +1,57 @@
 /* style.css */
 
+/* Стилизация тела страницы */
 body {
-    margin: 0; /* Убираем стандартные отступы */
-    overflow: hidden; /* Скрываем полосы прокрутки */
-    background-color: #87ceeb; /* Фон - небесно-голубой, как в SMB */
-    display: flex; /* Используем flexbox для центрирования */
-    justify-content: center; /* Центрируем по горизонтали */
-    align-items: center; /* Центрируем по вертикали */
-    min-height: 100vh; /* Используем всю высоту видимой части экрана */
-    font-family: sans-serif; /* Простой шрифт для UI */
+    margin: 0; /* Убираем стандартные внешние отступы */
+    overflow: hidden; /* Предотвращаем появление полос прокрутки */
+    background-color: #87ceeb; /* Устанавливаем небесно-голубой фон, как в SMB */
+    display: flex; /* Включаем Flexbox для центрирования содержимого */
+    justify-content: center; /* Центрируем flex-элементы по горизонтали */
+    align-items: center; /* Центрируем flex-элементы по вертикали */
+    min-height: 100vh; /* Гарантируем, что тело занимает всю высоту видимой части окна */
+    font-family: sans-serif; /* Устанавливаем простой шрифт */
+    /* Дополнительные стили для предотвращения выделения текста и контекстных меню при долгом нажатии на мобильных */
+    -webkit-touch-callout: none; /* Отключает вызов контекстного меню при долгом нажатии на iOS */
+    -webkit-user-select: none; /* Отключает возможность выделения текста на iOS */
+    -khtml-user-select: none; /* Отключает возможность выделения текста в старых браузерах */
+    -moz-user-select: none; /* Отключает возможность выделения текста в Firefox */
+    -ms-user-select: none; /* Отключает возможность выделения текста в Internet Explorer/Edge */
+    user-select: none; /* Отключает возможность выделения текста */
 }
 
+/* Стилизация контейнера игры */
 #game-container {
-    position: relative; /* Позволяет абсолютно позиционировать дочерние элементы (UI, touch controls) внутри */
-    /* Размер будет установлен JavaScript'ом для точного соответствия разрешению игры */
-    /* Пример фиксированного размера для тестирования, можно удалить */
-    /* width: 256px; */
-    /* height: 240px; */
-    /* border: 1px solid black; */ /* Граница для наглядности */
+    position: relative; /* Важно для абсолютного позиционирования UI элементов поверх canvas */
+    /* Размер canvas будет установлен JavaScript'ом, поэтому явное задание ширины/высоты здесь опционально */
+    /* max-width: 100%; */ /* Гарантируем, что контейнер не превышает ширину экрана на мобильных */
+    /* max-height: 100vh; */ /* Гарантируем, что контейнер не превышает высоту экрана на мобильных */
+     /* Если вам нужно, чтобы игра масштабировалась, JS должен рассчитать размер canvas и #game-container */
+     /* Пример: canvas.style.width = '100vw'; canvas.style.height = 'calc(100vw * (GAME_HEIGHT / GAME_WIDTH))'; */
 }
 
+/* Стилизация элемента canvas */
 #gameCanvas {
-    display: block; /* Убирает небольшой нижний отступ, который может быть у canvas */
-    /* Размер будет установлен JavaScript'ом */
-    image-rendering: pixelated; /* Помогает сохранить пиксельную четкость при масштабировании */
-    image-rendering: crisp-edges; /* Альтернатива для pixelated */
+    display: block; /* Убирает возможный нижний отступ */
+    /* Важно для сохранения пиксельной четкости при масштабировании */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges; /* Для старых версий Firefox */
+    image-rendering: -o-crisp-edges; /* Для старых версий Opera */
+    /* Размер canvas будет установлен JavaScript'ом */
 }
 
-/* Стили для UI элементов */
+/* Стили для UI элементов (счет, жизни) */
 #ui-score,
 #ui-lives {
     position: absolute; /* Абсолютное позиционирование относительно #game-container */
     top: 10px; /* Отступ сверху */
     color: white; /* Белый текст */
     font-size: 16px; /* Размер шрифта */
-    text-shadow: 1px 1px 0 black; /* Тень для читаемости на любом фоне */
-    z-index: 10; /* Убедимся, что UI находится поверх canvas */
+    text-shadow: 1px 1px 0px black; /* Тень для лучшей читаемости на фоне */
+    z-index: 10; /* Гарантирует, что эти элементы будут поверх canvas */
+    padding: 5px 10px; /* Небольшие внутренние отступы */
+    /* background-color: rgba(0, 0, 0, 0.3); */ /* Опционально: полупрозрачный фон для лучшей читаемости */
+    /* border-radius: 5px; */ /* Опционально: скругленные углы */
 }
 
 #ui-score {
@@ -48,44 +64,65 @@ body {
 
 /* --- Стили для touch-управления --- */
 #touch-controls {
-    position: absolute; /* Абсолютное позиционирование */
+    position: absolute; /* Абсолютное позиционирование относительно #game-container */
     bottom: 10px; /* Отступ снизу */
     left: 0;
     right: 0;
-    display: flex; /* Используем flexbox для расположения кнопок */
-    justify-content: space-between; /* Распределяем кнопки по ширине */
-    padding: 0 20px; /* Внутренние отступы по бокам */
-    z-index: 20; /* Убедимся, что controls находится поверх всего */
-    /* По умолчанию скрываем или показываем через JS */
-     /* display: none; */ /* Изначально скрыт, будет показан JS при обнаружении touch */
+    display: flex; /* Используем Flexbox для размещения кнопок в ряд */
+    justify-content: space-between; /* Распределяем кнопки по ширине контейнера с равным пространством между ними */
+    align-items: center; /* Выравниваем кнопки по центру по вертикали */
+    padding: 0 20px; /* Внутренние отступы слева и справа */
+    z-index: 20; /* Гарантирует, что кнопки будут поверх всего */
+    /* display: none; */ /* Изначально может быть скрыт в CSS и показан JS при обнаружении touch */
 }
 
+/* Стили для отдельных touch-кнопок */
 .touch-button {
-    font-size: 20px; /* Размер текста на кнопках */
-    padding: 10px 20px; /* Внутренние отступы кнопки */
+    font-size: 18px; /* Размер текста на кнопке */
+    padding: 12px 25px; /* Внутренние отступы кнопки */
     margin: 0 5px; /* Внешние отступы между кнопками */
-    opacity: 0.8; /* Немного прозрачные для ненавязчивости */
-    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный фон */
+    opacity: 0.7; /* Делаем кнопки полупрозрачными, чтобы они не сильно загораживали обзор */
+    background-color: rgba(0, 0, 0, 0.6); /* Полупрозрачный черный фон */
     color: white; /* Белый текст */
     border: 2px solid white; /* Белая граница */
-    border-radius: 5px; /* Скругленные углы */
-    cursor: pointer; /* Курсор в виде указателя */
-    flex-grow: 1; /* Кнопки занимают равное пространство в контейнере flexbox */
-    text-align: center; /* Текст по центру */
-    user-select: none; /* Запрет выделения текста при касании/клике */
-    -webkit-user-select: none; /* Для iOS */
-    -ms-user-select: none; /* Для Edge/IE */
-    -webkit-tap-highlight-color: transparent; /* Убирает стандартное выделение при касании на iOS */
+    border-radius: 8px; /* Слегка скругленные углы */
+    cursor: pointer; /* Меняем курсор на указатель при наведении (для десктопа) */
+    /* flex-grow: 1; */ /* Опционально: кнопки займут всю доступную ширину поровну */
+    text-align: center; /* Выравнивание текста по центру */
+
+    /* Важно для мобильных: предотвращает выделение и системную подсветку при касании */
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
+/* Стилизация кнопки при активном состоянии (нажатии) */
 .touch-button:active {
     opacity: 1.0; /* Полная непрозрачность при нажатии */
+    background-color: rgba(255, 255, 255, 0.8); /* Слегка меняем фон при нажатии */
+    color: black;
+    border-color: black;
 }
 
-/* Медиа-запрос: скрываем touch-управление на экранах шире 768px */
-/* Это пример, вы можете настроить breakpoint по своему усмотрению */
+/* Медиа-запрос: скрываем touch-управление на более широких экранах (считаем их десктопами/планшетами) */
+/* 768px - распространенный breakpoint для перехода от мобильных к планшетам/десктопам */
 @media (min-width: 768px) {
     #touch-controls {
-        display: none !important; /* !important может понадобиться, если JS уже установил display: flex */
+        display: none !important; /* Используем !important, чтобы переопределить возможный display: flex из JS */
     }
 }
+
+/* Опциональные стили для контейнера кнопки действия, если она отделена */
+/* #touch-action-container {
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    z-index: 20;
+} */
+
+/* @media (min-width: 768px) {
+    #touch-action-container {
+        display: none !important;
+    }
+} */
