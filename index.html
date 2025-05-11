@@ -2,18 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Обязательно для адаптации к смартфонам -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Basic Platformer</title>
+    <title>Basic Web Platformer</title>
+    <!-- Подключаем таблицу стилей -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- Контейнер для игры и UI -->
     <div id="game-container">
+        <!-- Canvas для отрисовки графики игры -->
         <canvas id="gameCanvas"></canvas>
+
+        <!-- UI элементы (счет, жизни) -->
         <div id="ui-score">Score: 0</div>
         <div id="ui-lives">Lives: 3</div>
 
-        <!-- Touch Controls for Smartphones -->
+        <!-- Блок для touch-управления на смартфонах -->
+        <!-- Изначально может быть скрыт и показан JavaScript'ом при обнаружении touch-устройства -->
         <div id="touch-controls">
             <button id="touch-left" class="touch-button">←</button>
             <button id="touch-right" class="touch-button">→</button>
@@ -21,11 +28,15 @@
         </div>
     </div>
 
+    <!-- Подключаем JavaScript файлы -->
+    <!-- Порядок важен из-за зависимостей -->
+    <script src="scripts/constants.js"></script>
     <script src="scripts/input.js"></script>
-    <script src="scripts/level.js"></script>
-    <script src="scripts/player.js"></script>
-    <script src="scripts/enemy.js"></script>
     <script src="scripts/block.js"></script>
+    <script src="scripts/enemy.js"></script>
+    <script src="scripts/player.js"></script>
+    <script src="scripts/level.js"></script>
+    <!-- Главный скрипт игры -->
     <script src="scripts/game.js"></script>
 </body>
 </html>
