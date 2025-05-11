@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Basic Platformer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-score">Score: 0</div>
+        <div id="ui-lives">Lives: 3</div>
+
+        <!-- Touch Controls for Smartphones -->
+        <div id="touch-controls">
+            <button id="touch-left" class="touch-button">←</button>
+            <button id="touch-right" class="touch-button">→</button>
+            <button id="touch-jump" class="touch-button">Jump</button>
+        </div>
+    </div>
+
+    <script src="scripts/input.js"></script>
+    <script src="scripts/level.js"></script>
+    <script src="scripts/player.js"></script>
+    <script src="scripts/enemy.js"></script>
+    <script src="scripts/block.js"></script>
+    <script src="scripts/game.js"></script>
+</body>
+</html>
